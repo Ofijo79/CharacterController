@@ -1,16 +1,21 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Cinemachine;
 
-public class TPSController : MonoBehaviour
+public class ShoulderController : MonoBehaviour
 {
     CharacterController _controller;
     Transform _camera;
+    Transform _lookAtTransform;
 
     float _horizontal;
     float _vertical;
+
     public GameObject _cameraNormal;
     public GameObject _aimCamera;
+
+
 
     [SerializeField] float _playerSpeed = 5;
 
@@ -27,11 +32,15 @@ public class TPSController : MonoBehaviour
     [SerializeField] LayerMask _groundLayer;
 
     bool _isGrounded;
+
+    [SerializeField] AxisState xAxis;
+    [SerializeField] AxisState yAxis;
     // Start is called before the first frame update
-    void Start()
+    void Awake()
     {
         _controller = GetComponent<CharacterController>();
         _camera = Camera.main.transform;
+        _lookAtTransform = GameObject.Find("LookAt").transform;
     }
 
     // Update is called once per frame
@@ -39,53 +48,21 @@ public class TPSController : MonoBehaviour
     {
         _horizontal = Input.GetAxisRaw("Horizontal");
         _vertical = Input.GetAxisRaw("Vertical");
-
+        Movement(); 
+        Jump(); 
 
         if(Input.GetButton("Fire2"))
         {
-            AimMovement();
+            _cameraNormal.SetActive(false);
+            _aimCamera.SetActive(true);
         }
         else
         {
-            Movement();            
+            _cameraNormal.SetActive(true);
+            _aimCamera.SetActive(false);
         }
-
-        Jump();
     }
-
-    void Movement()
-    {
-        Vector3 direction = new Vector3(_horizontal, 0, _vertical);
-        
-        if(direction != Vector3.zero)
-        {
-            float targetAngle = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg +  _camera.eulerAngles.y;
-            float smoothAngle = Mathf.SmoothDampAngle(transform.eulerAngles.y, targetAngle, ref _turnSmoothVelocity, _turnSmoothTime);
-            transform.rotation = Quaternion.Euler(0, smoothAngle, 0);
-
-            Vector3 moveDirection = Quaternion.Euler(0, targetAngle, 0) * Vector3.forward;
-            _controller.Move(moveDirection.normalized * _playerSpeed * Time.deltaTime);
-        }
-        
-    }
-
-    void AimMovement()
-        {
-            Vector3 direction = new Vector3(_horizontal, 0, _vertical);
-            float targetAngle = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg +  _camera.eulerAngles.y;
-            float smoothAngle = Mathf.SmoothDampAngle(transform.eulerAngles.y, _camera.eulerAngles.y, ref _turnSmoothVelocity, _turnSmoothTime);
-            transform.rotation = Quaternion.Euler(0, smoothAngle, 0);
-            
-            if(direction != Vector3.zero)
-            {
-
-                Vector3 moveDirection = Quaternion.Euler(0, targetAngle, 0) * Vector3.forward;
-                _controller.Move(moveDirection.normalized * _playerSpeed * Time.deltaTime);
-            }
-            
-        }
-
-
+    
     void Jump()
     {
         _isGrounded = Physics.CheckSphere(_sensorPosition.position, _sensorRadius, _groundLayer);
@@ -101,5 +78,26 @@ public class TPSController : MonoBehaviour
         _playerGravity.y += _gravity * Time.deltaTime;
         
         _controller.Move(_playerGravity * Time.deltaTime);
+    }
+
+    void Movement()
+    {
+        Vector3 direction = new Vector3(_horizontal, 0, _vertical);
+        
+        if(direction != Vector3.zero)
+        {
+            float targetAngle = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg +  _camera.eulerAngles.y;
+
+            Vector3 moveDirection = Quaternion.Euler(0, targetAngle, 0) * Vector3.forward;
+            _controller.Move(moveDirection.normalized * _playerSpeed * Time.deltaTime);
+        }
+        
+        Vector3 move = new Vector3(_horizontal, 0, _vertical).normalized;
+
+        xAxis.Update(Time.deltaTime);
+        yAxis.Update(Time.deltaTime);
+
+        transform.rotation = Quaternion.Euler(0, xAxis.Value, 0);
+        _lookAtTransform.eulerAngles = new Vector3(yAxis.Value, transform.eulerAngles.y, 0);
     }
 }
