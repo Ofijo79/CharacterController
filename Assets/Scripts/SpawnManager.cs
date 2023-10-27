@@ -4,62 +4,59 @@ using UnityEngine;
 
 public class SpawnManager : MonoBehaviour
 {
-    public GameObject cubePrefab;
+    [SerializeField] GameObject enemyPrefab;//prefab de enemigo
 
-    public int cubeToSpawn;
+    [SerializeField]private int enemyToSpawn;//enemigos totales
+    private int totalEnemiesToSpawn;//enemigos por cada spawn
+    [SerializeField]float waveTime = 60;//tiempo de la oleada
+    [SerializeField]int waveNumber = 5;//numero de oleadas
 
     //public Transform[] spawnPositions  = new Transform[3]{};
 
-    public Transform[] spawnPositions;
+    [SerializeField] private Transform[] spawnPositions;
     // Start is called before the first frame update
     void Start()
     {
-        InvokeRepeating("SpawnCube", 2f, 1.5f);
+        totalEnemiesToSpawn = enemyToSpawn / spawnPositions.Length+1;// esto lo hacemos para repartir los enemigos dentro de todos los spawns el uno lo ponemos para que detecte todos los spawns
+        StartCoroutine("SpawnEnemy");//empezamos corutina que es una funcion que se puede parar
     }
 
     // Update is called once per frame
     void Update()
     {
-        if(cubeToSpawn == 0)
+        if(enemyToSpawn <= 0)//si llega a 0 no spawnee enemigos
         {
-            CancelInvoke();
+            StopCoroutine("SpawnEnemy");
+        }
+
+        if( waveNumber >= 0)//croonometro que resta tiempo
+        {
+            waveTime -= Time.deltaTime;
+        }
+        
+
+        if(waveTime <= 0)// reanudar el tiempo con oleada 
+        {
+            enemyToSpawn = Random.Range(30, 60);
+            totalEnemiesToSpawn = enemyToSpawn / spawnPositions.Length+1;
+
+            StartCoroutine("SpawnEnemy");
+            waveTime = 60;
+            waveNumber --;
         }
     }
 
-    void SpawnCube()
+    IEnumerator SpawnEnemy() // Corutina que vamos a usar para Spawnear a enemigos
     {
-        /*Transform selectedSpawn = spawnPositions[Random.Range(0, spawnPositions.Length)];
+        Transform randomSpawn = spawnPositions[Random.Range(0, spawnPositions.Length)];//que coja un spawn aleatorio para los enemigos
 
-        Instantiate(goombaPrefab, selectedSpawn.position, selectedSpawn.rotation);*/
-
-        foreach(Transform spawn in spawnPositions)
+        for(int i = 0; i < (int)totalEnemiesToSpawn; i++)
         {
-            Instantiate(cubePrefab, spawn.position, spawn.rotation);
-        }
+            Instantiate(enemyPrefab, randomSpawn.position, randomSpawn.rotation);//crea una copia de los prefabs y los pone en un spawn aleatorio
+            enemyToSpawn--;
+            yield return new WaitForSeconds(1);// para parar corutina y que se espere un segundo
+        }    
 
-        Transform randomSpawn = spawnPositions[Random.Range(0,4)];
-
-        Instantiate(cubePrefab, randomSpawn.position, randomSpawn.rotation);
-
-        /*for(int i = 0; i < spawnPositions.Length; i++)
-        {
-            Instantiate(goombaPrefab, spawnPositions[i].position, spawnPositions[i].rotation);
-        }*/
-
-        /*int i = 0;
-        while(i < spawnPositions.Length)
-        {
-            Instantiate(goombaPrefab, spawnPositions[i].position, spawnPositions[i].rotation);
-            i++;
-        }*/
-
-        /*int i = 0;
-        do
-        {
-            Instantiate(goombaPrefab, spawnPositions[i].position, spawnPositions[i].rotation);
-            i++;
-        }while(i < spawnPositions.Length);*/
-
-        cubeToSpawn--;
+        StartCoroutine("SpawnEnemy");    
     }
 }
