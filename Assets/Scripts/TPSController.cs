@@ -5,6 +5,7 @@ using UnityEngine;
 public class TPSController : MonoBehaviour
 {
     CharacterController _controller;
+    Animator _animator;
     Transform _camera;
 
     float _horizontal;
@@ -28,9 +29,10 @@ public class TPSController : MonoBehaviour
 
     bool _isGrounded;
     // Start is called before the first frame update
-    void Start()
+    void Awake()
     {
         _controller = GetComponent<CharacterController>();
+        _animator = GetComponentInChildren<Animator>();
         _camera = Camera.main.transform;
     }
 
@@ -56,6 +58,10 @@ public class TPSController : MonoBehaviour
     void Movement()
     {
         Vector3 direction = new Vector3(_horizontal, 0, _vertical);
+
+        _animator.SetFloat("VelX", 0);
+        _animator.SetFloat("VelZ", direction.magnitude);
+        _animator.SetBool("IsJumping", false);
         
         if(direction != Vector3.zero)
         {
@@ -72,6 +78,10 @@ public class TPSController : MonoBehaviour
     void AimMovement()
         {
             Vector3 direction = new Vector3(_horizontal, 0, _vertical);
+
+            _animator.SetFloat("VelX", _horizontal);
+            _animator.SetFloat("VelZ", _vertical);
+
             float targetAngle = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg +  _camera.eulerAngles.y;
             float smoothAngle = Mathf.SmoothDampAngle(transform.eulerAngles.y, _camera.eulerAngles.y, ref _turnSmoothVelocity, _turnSmoothTime);
             transform.rotation = Quaternion.Euler(0, smoothAngle, 0);
@@ -97,6 +107,7 @@ public class TPSController : MonoBehaviour
         if(_isGrounded && Input.GetButtonDown("Jump"))
         {
             _playerGravity.y = Mathf.Sqrt(_jumpHeigh * -2 * _gravity);
+            _animator.SetBool("IsJumping", true);
         }
         _playerGravity.y += _gravity * Time.deltaTime;
         
