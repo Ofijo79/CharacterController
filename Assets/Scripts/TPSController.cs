@@ -61,7 +61,6 @@ public class TPSController : MonoBehaviour
 
         _animator.SetFloat("VelX", 0);
         _animator.SetFloat("VelZ", direction.magnitude);
-        _animator.SetBool("IsJumping", false);
         
         if(direction != Vector3.zero)
         {
