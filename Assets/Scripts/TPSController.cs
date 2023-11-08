@@ -28,6 +28,8 @@ public class TPSController : MonoBehaviour
     [SerializeField] LayerMask _groundLayer;
 
     bool _isGrounded;
+
+    public int shootDamage = 2;
     // Start is called before the first frame update
     void Awake()
     {
@@ -53,6 +55,11 @@ public class TPSController : MonoBehaviour
         }
 
         Jump();
+
+        if(Input.GetKeyDown(KeyCode.K))
+        {
+            RayTest();
+        }
     }
 
     void Movement()
@@ -71,6 +78,7 @@ public class TPSController : MonoBehaviour
             Vector3 moveDirection = Quaternion.Euler(0, targetAngle, 0) * Vector3.forward;
             _controller.Move(moveDirection.normalized * _playerSpeed * Time.deltaTime);
         }
+        _animator.SetBool("IsJumping", false);
         
     }
 
@@ -91,6 +99,7 @@ public class TPSController : MonoBehaviour
                 Vector3 moveDirection = Quaternion.Euler(0, targetAngle, 0) * Vector3.forward;
                 _controller.Move(moveDirection.normalized * _playerSpeed * Time.deltaTime);
             }
+            _animator.SetBool("IsJumping", false);
             
         }
 
@@ -98,10 +107,14 @@ public class TPSController : MonoBehaviour
     void Jump()
     {
         _isGrounded = Physics.CheckSphere(_sensorPosition.position, _sensorRadius, _groundLayer);
+        
+        //Ground sensor version raycast
+        /*_isGrounded = Physics.Raycast(_sensorPosition.position, Vector3.down, _sensorRadius, _groundLayer);
+        Debug.DrawRay(_sensorPosition.position, Vector3.down * _sensorRadius, Color.yellow);*/
 
         if(_isGrounded && _playerGravity.y < 0)
         {
-            _playerGravity.y = 0;
+            _playerGravity.y = -2;
         }
         if(_isGrounded && Input.GetButtonDown("Jump"))
         {
@@ -111,5 +124,34 @@ public class TPSController : MonoBehaviour
         _playerGravity.y += _gravity * Time.deltaTime;
         
         _controller.Move(_playerGravity * Time.deltaTime);
+    }
+
+    void RayTest()
+    {
+        //Raycast Simple
+        /*if(Physics.Raycast(transform.position, transform.forward, 10))
+        {
+            Debug.Log("Hit");
+            Debug.DrawRay(transform.position, transform.forward * 10, Color.red);
+        }
+        else
+        {
+            Debug.DrawRay(transform.position, transform.forward * 10, Color.blue);
+        }*/
+
+        RaycastHit hit;
+        if(Physics.Raycast(transform.position, transform.forward, out hit, 10))
+        {
+            Debug.Log(hit.transform.name);
+            Debug.Log(hit.transform.position);
+            //Destroy(hit.transform.gameObject);
+
+            Box caja = hit.transform.GetComponent<Box>();
+            
+            if(caja != null)
+            {
+                caja.TakeDamage(shootDamage);    
+            }
+        }
     }
 }
